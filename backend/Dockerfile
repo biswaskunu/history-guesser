@@ -3,6 +3,7 @@ FROM rust:1.85-slim
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
+    build-essential \
     pkg-config \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*

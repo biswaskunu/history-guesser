@@ -1,11 +1,12 @@
-use axum::{routing::get, Router, extract::State, Json};
+use axum::{routing::{get,post}, Router};
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
-use serde_json::json;
 
-#[derive(Clone)]
-struct AppState {
-    db: sqlx::PgPool,
+pub mod models;
+pub mod routes;
+
+pub struct AppState {
+    pub db: sqlx::PgPool,
 }
 
 #[tokio::main]
@@ -24,8 +25,12 @@ async fn main() -> anyhow::Result<()> {
     let state = Arc::new(AppState { db: pool });
 
     let app = Router::new()
-        .route("/health", get(health_check))
-        .route("/db-check", get(db_check))
+        .route("/health", get(routes::health::health_check))
+        .route("/db-check", get(routes::health::db_check))
+        .route("/events/random", get(routes::events::random_event))
+        .route("/events/{id}/guess", post(routes::events::submit_guess))
+
+        
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await?;
@@ -33,19 +38,4 @@ async fn main() -> anyhow::Result<()> {
     axum::serve(listener, app).await?;
 
     Ok(())
-}
-
-async fn health_check() -> Json<serde_json::Value> {
-    Json(json!({ "status": "ok" }))
-}
-
-async fn db_check(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
-    let result: Result<(i32,), _> = sqlx::query_as("SELECT 1")
-        .fetch_one(&state.db)
-        .await;
-
-    match result {
-        Ok(_) => Json(json!({ "database": "connected" })),
-        Err(e) => Json(json!({ "database": "error", "message": e.to_string() })),
-    }
 }
