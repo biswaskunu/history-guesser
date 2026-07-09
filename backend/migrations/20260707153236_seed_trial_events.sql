@@ -17,14 +17,14 @@ VALUES
     ),
     -- 3. Raising the Flag on Iwo Jima
     (
-        'https://images.unsplash.com/photo-1533230393054-04cd98010447?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1773434008045-a690b7c88c22?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8UmFpc2luZyUyMHRoZSUyMEZsYWclMjBvbiUyMEl3byUyMEppbWF8ZW58MHx8MHx8fDA%3D',
         'Raising the Flag on Iwo Jima',
         'US Marines raise the American flag atop Mount Suribachi.',
         24.7580, 141.2917, 1945, 3
     ),
     -- 4. Tiananmen Square Protests
     (
-        'https://images.unsplash.com/photo-1508612173426-ff7d45bb41f2?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1771068239668-4380d0678b3b?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
         'Tiananmen Square Protests',
         'Pro-democracy demonstrations culminate in a historic standoff in Beijing.',
         39.9042, 116.3975, 1989, 3

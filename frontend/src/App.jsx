@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { fetchRandomEvent, submitGuess } from './api'
+import { fetchRandomEvent, submitGuess } from './Api'
 import GameMap from './components/GameMap'
 import './App.css'
 
@@ -19,8 +19,6 @@ function verdictFor(score) {
 }
 
 function App() {
-  // Single state object because these fields all change together at each
-  // phase transition (new round -> guessing -> result).
   const [game, setGame] = useState({
     event: null,
     guess: null,
@@ -46,7 +44,6 @@ function App() {
   }, [startNewRound])
 
   function handleGuess(latlng) {
-    // Only allow placing a guess before the round is scored.
     if (game.result) return
     setGame((g) => ({ ...g, guess: latlng }))
   }
@@ -62,14 +59,21 @@ function App() {
   }
 
   if (game.loading) {
-    return <div className="status">Pulling next file from the archive…</div>
+    return (
+      <div className="status-container">
+        <div className="spinner"></div>
+        <div className="status-message">Pulling next record from archive...</div>
+      </div>
+    )
   }
 
   if (game.error) {
     return (
-      <div className="status">
-        <p>Request failed: {game.error}</p>
-        <button className="stamp-btn" onClick={() => startNewRound(false)}>
+      <div className="status-container">
+        <div className="status-message" style={{ marginBottom: '1.5rem' }}>
+          Error: {game.error}
+        </div>
+        <button className="action-btn" style={{ maxWidth: '200px' }} onClick={() => startNewRound(false)}>
           Retry
         </button>
       </div>
@@ -79,67 +83,88 @@ function App() {
   const caseNo = String(round).padStart(4, '0')
 
   return (
-    <div className="dossier">
-      <div className="dossier-header">
-        <span>
-          Case No. <span className="case-no">{caseNo}</span>
-        </span>
-        <span>History Archive Div.</span>
-      </div>
+    <>
+      {/* Header */}
+      <header className="app-header">
+        <div className="app-title">History<span>Guesser</span></div>
+        <div className="case-badge">CASE #{caseNo}</div>
+      </header>
 
-      <div className="event-card">
-        <div className="photo-mat">
-          <img src={game.event.image_url} alt={game.event.title} />
-          <div className="difficulty-stamp">
-            <span>{DIFFICULTY_LABEL[game.event.difficulty] || 'FILE'}</span>
-            <strong>{game.event.difficulty}/5</strong>
+      {/* Main Grid Container */}
+      <main className="game-container">
+        
+        {/* Left Column: Image, Title, Description, and Submit Button */}
+        <section className="left-col">
+          <div className="event-card">
+            <div className="photo-container">
+              <img src={game.event.image_url} alt={game.event.title} />
+              <div className="difficulty-pill">
+                Difficulty: <span>{game.event.difficulty}/5</span>
+              </div>
+            </div>
+            <div className="event-copy">
+              <p className="eyebrow">{DIFFICULTY_LABEL[game.event.difficulty] || 'ARCHIVE FILE'}</p>
+              <h2>{game.event.title}</h2>
+              <p>{game.event.description}</p>
+            </div>
           </div>
-        </div>
-        <div className="event-copy">
-          <p className="eyebrow">Field report</p>
-          <h2>{game.event.title}</h2>
-          <p>{game.event.description}</p>
-        </div>
-      </div>
 
-      <div className="map-wrap">
-        <span className="map-label">Pinpoint the location</span>
-        <GameMap
-          guess={game.guess}
-          actual={
-            game.result
-              ? { latitude: game.result.actual_latitude, longitude: game.result.actual_longitude }
-              : null
-          }
-          onGuess={handleGuess}
-          disabled={!!game.result}
-        />
-      </div>
+          {!game.result && (
+            <div className="action-row">
+              <button 
+                className="action-btn" 
+                onClick={handleSubmit} 
+                disabled={!game.guess}
+              >
+                {game.guess ? 'Submit Coordinates' : 'Select location on map'}
+              </button>
+            </div>
+          )}
+        </section>
 
-      {!game.result && (
-        <div className="action-row">
-          <button className="stamp-btn" onClick={handleSubmit} disabled={!game.guess}>
-            {game.guess ? 'File guess' : 'Click the map to place a pin'}
-          </button>
-        </div>
-      )}
+        {/* Right Column: Map Selection and Verdict Details */}
+        <section className="right-col">
+          <div className="map-card">
+            <div className="map-label">
+              <span>Target Coordinates</span>
+            </div>
+            <div className="map-wrap">
+              <GameMap
+                guess={game.guess}
+                actual={
+                  game.result
+                    ? { latitude: game.result.actual_latitude, longitude: game.result.actual_longitude }
+                    : null
+                }
+                onGuess={handleGuess}
+                disabled={!!game.result}
+              />
+            </div>
+          </div>
 
-      {game.result && (
-        <div className="result">
-          <div className="verdict-stamp">{verdictFor(game.result.score)}</div>
-          <p className="detail">
-            Off by <strong>{game.result.distance_km} km</strong> — the event took place in{' '}
-            <strong>{game.result.year}</strong>.
-          </p>
-          <p className="score-line">
-            Score: <strong>{game.result.score}</strong> / 5000
-          </p>
-          <button className="stamp-btn" onClick={() => startNewRound(true)}>
-            Open next case
-          </button>
-        </div>
-      )}
-    </div>
+          {game.result && (
+            <div className="result-card">
+              <div className="result-header">
+                <span className={`verdict-tag verdict-${verdictFor(game.result.score)}`}>
+                  {verdictFor(game.result.score)}
+                </span>
+                <div className="score-display">
+                  {game.result.score}<span>/5000</span>
+                </div>
+              </div>
+              <p className="result-detail">
+                Your pin missed the mark by <strong>{game.result.distance_km} km</strong>. 
+                This historical event occurred in the year <strong>{game.result.year}</strong>.
+              </p>
+              <button className="action-btn" onClick={() => startNewRound(true)}>
+                Next Round
+              </button>
+            </div>
+          )}
+        </section>
+
+      </main>
+    </>
   )
 }
 
