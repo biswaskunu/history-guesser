@@ -32,7 +32,7 @@ export default function GameMap({ guess, actual, onGuess, disabled }) {
     <MapContainer
       center={[20, 0]}
       zoom={2}
-      style={{ height: '360px', width: '100%' }}
+      style={{ height: '460px', width: '100%' }}
       zoomControl={true}
     >
       <TileLayer
@@ -47,7 +47,7 @@ export default function GameMap({ guess, actual, onGuess, disabled }) {
         <CircleMarker
           center={[actual.latitude, actual.longitude]}
           radius={8}
-          pathOptions={{ color: '#a13d2b', fillColor: '#a13d2b', fillOpacity: 0.85, weight: 2 }}
+          pathOptions={{ color: '#2f5d62', fillColor: '#2f5d62', fillOpacity: 0.85, weight: 2 }}
         />
       )}
     </MapContainer>
