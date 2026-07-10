@@ -3,6 +3,53 @@ import { fetchRandomEvent, submitGuess } from './api'
 import GameMap from './components/GameMap'
 import './App.css'
 
+const DIFFICULTY_LABEL = {
+  1: 'Easy',
+  2: 'Casual',
+  3: 'Moderate',
+  4: 'Challenging',
+  5: 'Expert',
+}
+
+function verdictFor(score) {
+  if (score >= 4500) return 'Bullseye'
+  if (score >= 3000) return 'Close guess'
+  if (score >= 1000) return 'In the region'
+  return 'Way off'
+}
+
+function SunIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <circle cx="12" cy="12" r="4.5" />
+      <path d="M12 2.5v2.5M12 19v2.5M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2.5 12H5M19 12h2.5M4.2 19.8L6 18M18 6l1.8-1.8" />
+    </svg>
+  )
+}
+
+function MoonIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor">
+      <path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z" />
+    </svg>
+  )
+}
+
+function usePreferredTheme() {
+  const [theme, setTheme] = useState(() => {
+    const stored = localStorage.getItem('theme')
+    if (stored === 'light' || stored === 'dark') return stored
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  })
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    localStorage.setItem('theme', theme)
+  }, [theme])
+
+  return [theme, setTheme]
+}
+
 function App() {
   // Single state object because these fields all change together at each
   // phase transition (new round -> guessing -> result).
@@ -13,19 +60,22 @@ function App() {
     loading: true,
     error: null,
   })
+  const [round, setRound] = useState(1)
+  const [theme, setTheme] = usePreferredTheme()
 
-  const startNewRound = useCallback(async () => {
+  const startNewRound = useCallback(async (advance = false) => {
     setGame({ event: null, guess: null, result: null, loading: true, error: null })
     try {
       const event = await fetchRandomEvent()
       setGame({ event, guess: null, result: null, loading: false, error: null })
+      if (advance) setRound((r) => r + 1)
     } catch (err) {
       setGame((g) => ({ ...g, loading: false, error: err.message }))
     }
   }, [])
 
   useEffect(() => {
-    startNewRound()
+    startNewRound(false)
   }, [startNewRound])
 
   function handleGuess(latlng) {
@@ -44,56 +94,116 @@ function App() {
     }
   }
 
+  function toggleTheme() {
+    setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
+  }
+
   if (game.loading) {
-    return <div className="status">Loading round…</div>
+    return (
+      <div className="status">
+        <div className="status-spinner" />
+        Loading round…
+      </div>
+    )
   }
 
   if (game.error) {
     return (
       <div className="status">
         <p>Something went wrong: {game.error}</p>
-        <button onClick={startNewRound}>Try again</button>
+        <button className="next-btn" onClick={() => startNewRound(false)}>
+          Try again
+        </button>
       </div>
     )
   }
 
   return (
-    <div className="game">
-      <header className="event-card">
-        <img src={game.event.image_url} alt={game.event.title} />
-        <div>
-          <h2>{game.event.title}</h2>
-          <p>{game.event.description}</p>
+    <div>
+      <div className="top-bar">
+        <span className="brand">History Guesser</span>
+        <div className="top-bar-right">
+          <span className="round-badge">Round {round}</span>
+          <button
+            className="theme-toggle"
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+          </button>
         </div>
-      </header>
+      </div>
 
-      <GameMap
-        guess={game.guess}
-        actual={
-          game.result
-            ? { latitude: game.result.actual_latitude, longitude: game.result.actual_longitude }
-            : null
-        }
-        onGuess={handleGuess}
-        disabled={!!game.result}
-      />
-
-      {!game.result && (
-        <button onClick={handleSubmit} disabled={!game.guess}>
-          {game.guess ? 'Submit guess' : 'Click the map to place your guess'}
-        </button>
-      )}
-
-      {game.result && (
-        <div className="result">
-          <p>
-            You were <strong>{game.result.distance_km} km</strong> away — the event was in{' '}
-            <strong>{game.result.year}</strong>.
-          </p>
-          <p className="score">Score: {game.result.score} / 5000</p>
-          <button onClick={startNewRound}>Next round</button>
+      <div className="game-layout" key={game.event.id}>
+        {/* Left column: event info */}
+        <div className="panel event-panel">
+          <div className="event-photo">
+            <img src={game.event.image_url} alt={game.event.title} />
+            <span className="difficulty-chip">{DIFFICULTY_LABEL[game.event.difficulty] || 'Unknown'}</span>
+          </div>
+          <div className="event-body">
+            <h2>{game.event.title}</h2>
+            <p>{game.event.description}</p>
+          </div>
+          {!game.result && (
+            <button
+              className={`submit-btn${game.guess ? ' armed' : ''}`}
+              onClick={handleSubmit}
+              disabled={!game.guess}
+            >
+              {game.guess ? 'Submit guess' : 'Click the map to guess'}
+            </button>
+          )}
+          {game.result && (
+            <button className="next-btn" onClick={() => startNewRound(true)}>
+              Next round
+            </button>
+          )}
         </div>
-      )}
+
+        {/* Right column: map + result */}
+        <div className="right-column">
+          <div className="panel map-panel">
+            <GameMap
+              guess={game.guess}
+              actual={
+                game.result
+                  ? { latitude: game.result.actual_latitude, longitude: game.result.actual_longitude }
+                  : null
+              }
+              onGuess={handleGuess}
+              disabled={!!game.result}
+            />
+          </div>
+
+          {game.result ? (
+            <div className="panel result-panel">
+              <div className="verdict-row">
+                <span className="verdict-badge">{verdictFor(game.result.score)}</span>
+              </div>
+              <div className="result-stats">
+                <div className="stat">
+                  <p className="label">Distance</p>
+                  <p className="value">{game.result.distance_km} km</p>
+                </div>
+                <div className="stat">
+                  <p className="label">Year</p>
+                  <p className="value">{game.result.year}</p>
+                </div>
+                <div className="stat score">
+                  <p className="label">Score</p>
+                  <p className="value">{game.result.score}</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="panel result-empty">
+              Place a pin on the map, then submit your guess to see the result here.
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

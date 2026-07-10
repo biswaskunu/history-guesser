@@ -32,7 +32,8 @@ export default function GameMap({ guess, actual, onGuess, disabled }) {
     <MapContainer
       center={[20, 0]}
       zoom={2}
-      style={{ height: '400px', width: '100%' }}
+      style={{ height: '460px', width: '100%' }}
+      zoomControl={true}
     >
       <TileLayer
         attribution='&copy; OpenStreetMap contributors'
@@ -46,7 +47,7 @@ export default function GameMap({ guess, actual, onGuess, disabled }) {
         <CircleMarker
           center={[actual.latitude, actual.longitude]}
           radius={8}
-          pathOptions={{ color: 'red', fillColor: 'red', fillOpacity: 0.8 }}
+          pathOptions={{ color: '#2f5d62', fillColor: '#2f5d62', fillOpacity: 0.85, weight: 2 }}
         />
       )}
     </MapContainer>
