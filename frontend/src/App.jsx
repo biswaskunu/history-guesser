@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { fetchRandomEvent, submitGuess } from './api'
 import GameMap from './components/GameMap'
+import RoundHistory from './components/RoundHistory'
 import './App.css'
 
 const DIFFICULTY_LABEL = {
@@ -11,12 +12,17 @@ const DIFFICULTY_LABEL = {
   5: 'Expert',
 }
 
+// A round counts toward a streak once its score clears this bar — matches
+// the "Close guess" verdict tier so the streak reflects consistently good guesses.
+const STREAK_THRESHOLD = 3000
+
 function verdictFor(score) {
-  if (score >= 4500) return 'Bullseye'
+  if (score >= 4500) return 'Bro, touch some grass!'
   if (score >= 3000) return 'Close guess'
   if (score >= 1000) return 'In the region'
-  return 'Way off'
+  return 'Bro really missed , is this your first time playing?'
 }
+
 
 function SunIcon() {
   return (
@@ -50,6 +56,20 @@ function usePreferredTheme() {
   return [theme, setTheme]
 }
 
+// Consecutive rounds (from the most recent backwards) scoring at or above
+// the streak threshold. Resets the moment a round falls short.
+function computeStreak(history) {
+  let streak = 0
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (history[i].score >= STREAK_THRESHOLD) {
+      streak += 1
+    } else {
+      break
+    }
+  }
+  return streak
+}
+
 function App() {
   // Single state object because these fields all change together at each
   // phase transition (new round -> guessing -> result).
@@ -61,7 +81,11 @@ function App() {
     error: null,
   })
   const [round, setRound] = useState(1)
+  const [history, setHistory] = useState([])
   const [theme, setTheme] = usePreferredTheme()
+
+  const totalScore = history.reduce((sum, entry) => sum + entry.score, 0)
+  const streak = computeStreak(history)
 
   const startNewRound = useCallback(async (advance = false) => {
     setGame({ event: null, guess: null, result: null, loading: true, error: null })
@@ -89,6 +113,16 @@ function App() {
     try {
       const result = await submitGuess(game.event.id, game.guess)
       setGame((g) => ({ ...g, result }))
+      setHistory((h) => [
+        ...h,
+        {
+          round,
+          title: game.event.title,
+          year: result.year,
+          distance_km: result.distance_km,
+          score: result.score,
+        },
+      ])
     } catch (err) {
       setGame((g) => ({ ...g, error: err.message }))
     }
@@ -124,6 +158,12 @@ function App() {
         <span className="brand">History Guesser</span>
         <div className="top-bar-right">
           <span className="round-badge">Round {round}</span>
+          {history.length > 0 && (
+            <span className="total-badge">Total {totalScore}</span>
+          )}
+          {streak >= 2 && (
+            <span className="streak-badge">🔥 {streak} streak</span>
+          )}
           <button
             className="theme-toggle"
             onClick={toggleTheme}
@@ -136,30 +176,34 @@ function App() {
       </div>
 
       <div className="game-layout" key={game.event.id}>
-        {/* Left column: event info */}
-        <div className="panel event-panel">
-          <div className="event-photo">
-            <img src={game.event.image_url} alt={game.event.title} />
-            <span className="difficulty-chip">{DIFFICULTY_LABEL[game.event.difficulty] || 'Unknown'}</span>
+        {/* Left column: event info + session history */}
+        <div className="left-column">
+          <div className="panel event-panel">
+            <div className="event-photo">
+              <img src={game.event.image_url} alt={game.event.title} />
+              <span className="difficulty-chip">{DIFFICULTY_LABEL[game.event.difficulty] || 'Unknown'}</span>
+            </div>
+            <div className="event-body">
+              <h2>{game.event.title}</h2>
+              <p>{game.event.description}</p>
+            </div>
+            {!game.result && (
+              <button
+                className={`submit-btn${game.guess ? ' armed' : ''}`}
+                onClick={handleSubmit}
+                disabled={!game.guess}
+              >
+                {game.guess ? 'Submit guess' : 'Click the map to guess'}
+              </button>
+            )}
+            {game.result && (
+              <button className="next-btn" onClick={() => startNewRound(true)}>
+                Next round
+              </button>
+            )}
           </div>
-          <div className="event-body">
-            <h2>{game.event.title}</h2>
-            <p>{game.event.description}</p>
-          </div>
-          {!game.result && (
-            <button
-              className={`submit-btn${game.guess ? ' armed' : ''}`}
-              onClick={handleSubmit}
-              disabled={!game.guess}
-            >
-              {game.guess ? 'Submit guess' : 'Click the map to guess'}
-            </button>
-          )}
-          {game.result && (
-            <button className="next-btn" onClick={() => startNewRound(true)}>
-              Next round
-            </button>
-          )}
+
+          <RoundHistory history={history} />
         </div>
 
         {/* Right column: map + result */}

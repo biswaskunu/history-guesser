@@ -101,6 +101,33 @@
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
+.top-bar .total-badge {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  animation: fadeInUp 0.3s ease both;
+}
+
+.top-bar .streak-badge {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #a35a1f;
+  background: rgba(230, 148, 47, 0.16);
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+[data-theme='dark'] .top-bar .streak-badge {
+  color: var(--gold);
+}
+
 .theme-toggle {
   width: 34px;
   height: 34px;
@@ -131,6 +158,12 @@
   grid-template-columns: 5fr 7fr;
   gap: 1.5rem;
   align-items: start;
+}
+
+.left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .panel {
@@ -258,6 +291,89 @@
 
 .next-btn:hover {
   transform: translateY(-1px);
+}
+
+/* ---------- Left column: session history ---------- */
+.history-panel {
+  padding: 1.1rem 1.25rem;
+  animation-delay: 0.15s;
+}
+
+.history-empty {
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 1.5rem 1.25rem;
+}
+
+.history-title {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  animation: fadeInUp 0.3s ease both;
+}
+
+.history-round {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+  width: 1.8rem;
+}
+
+.history-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.history-event {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-meta {
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+}
+
+.history-score {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--gold);
+  flex-shrink: 0;
 }
 
 /* ---------- Right column: map + result ---------- */
