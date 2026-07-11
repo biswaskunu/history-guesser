@@ -66,8 +66,10 @@ async fn main() -> anyhow::Result<()> {
 
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "8000".to_string());
-    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await?;
-    tracing::info!("Server running on http://0.0.0.0:{}", port);
+    let addr = format!("0.0.0.0:{port}");
+
+    let listener = tokio::net::TcpListener::bind(&addr).await?;
+    tracing::info!("Server running on http://{addr}");
     axum::serve(listener, app).await?;
 
     Ok(())
