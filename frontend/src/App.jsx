@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { fetchRandomEvent, submitGuess } from './api'
+import { fetchRandomEvent, submitGuess } from './Api.js'
 import GameMap from './components/GameMap'
 import RoundHistory from './components/RoundHistory'
 import './App.css'
