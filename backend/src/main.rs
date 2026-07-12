@@ -43,7 +43,7 @@ async fn main() -> anyhow::Result<()> {
 
     let origins: Vec<HeaderValue> = frontend_origin
         .split(',')
-        .filter_map(|o| o.trim().parse::<HeaderValue>().ok())
+        .map(|o| o.trim().parse().expect("invalid FRONTEND_ORIGIN value"))
         .collect();
 
     let cors = CorsLayer::new()
