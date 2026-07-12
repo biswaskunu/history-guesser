@@ -39,12 +39,24 @@ async fn main() -> anyhow::Result<()> {
 
     // CORS configuration
     let frontend_origin = std::env::var("FRONTEND_ORIGIN")
-    .unwrap_or_else(|_| "https://history-guesser.netlify.app/".to_string());
+    .unwrap_or_else(|_| "https://history-guesser.netlify.app".to_string());
 
     let origins: Vec<HeaderValue> = frontend_origin
         .split(',')
-        .map(|o| o.trim().parse().expect("invalid FRONTEND_ORIGIN value"))
+        .map(|o| o.trim().trim_end_matches('/'))
+        .filter(|o| !o.is_empty())
+        .filter_map(|o| {
+            match o.parse::<HeaderValue>() {
+                Ok(v) => Some(v),
+                Err(e) => {
+                    tracing::warn!("skipping invalid FRONTEND_ORIGIN entry '{o}': {e}");
+                    None
+                }
+            }
+        })
         .collect();
+
+    tracing::info!("CORS allowed origins: {:?}", origins);
 
     let cors = CorsLayer::new()
         .allow_origin(origins)
