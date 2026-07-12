@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
-import { fetchRandomEvent, submitGuess } from './api'
+import { fetchRandomEvent, submitGuess } from './Api.js'
 import GameMap from './components/GameMap'
+import RoundHistory from './components/RoundHistory'
 import './App.css'
 
 const DIFFICULTY_LABEL = {
@@ -11,11 +12,15 @@ const DIFFICULTY_LABEL = {
   5: 'Expert',
 }
 
+// A round counts toward a streak once its score clears this bar — matches
+// the "Close guess" verdict tier so the streak reflects consistently good guesses.
+const STREAK_THRESHOLD = 3000
+
 function verdictFor(score) {
-  if (score >= 4500) return 'Bullseye'
+  if (score >= 4500) return 'Bro, touch some grass!'
   if (score >= 3000) return 'Close guess'
   if (score >= 1000) return 'In the region'
-  return 'Way off'
+  return 'Bro really missed , is this your first time playing?'
 }
 
 function SunIcon() {
@@ -37,17 +42,52 @@ function MoonIcon() {
 
 function usePreferredTheme() {
   const [theme, setTheme] = useState(() => {
-    const stored = localStorage.getItem('theme')
-    if (stored === 'light' || stored === 'dark') return stored
+    try {
+      const stored = localStorage.getItem('theme')
+      if (stored === 'light' || stored === 'dark') return stored
+    } catch (e) {
+      console.warn("Storage restricted: defaulting system theme.")
+    }
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   })
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
-    localStorage.setItem('theme', theme)
+    try {
+      localStorage.setItem('theme', theme)
+    } catch (e) {
+      // Quietly fail if storage is restricted
+    }
   }, [theme])
 
   return [theme, setTheme]
+}
+
+// Consecutive rounds (from the most recent backwards) scoring at or above
+// the streak threshold. Resets the moment a round falls short.
+function computeStreak(history) {
+  let streak = 0
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (history[i].score >= STREAK_THRESHOLD) {
+      streak += 1
+    } else {
+      break
+    }
+  }
+  return streak
+}
+
+const HIGH_SCORE_KEY = 'historyGuesser.highScore'
+
+function loadHighScore() {
+  try {
+    const stored = localStorage.getItem(HIGH_SCORE_KEY)
+    const parsed = stored ? parseInt(stored, 10) : 0
+    return Number.isNaN(parsed) ? 0 : parsed
+  } catch (e) {
+    console.warn("Storage restricted: could not load high score.")
+    return 0;
+  }
 }
 
 function App() {
@@ -61,7 +101,13 @@ function App() {
     error: null,
   })
   const [round, setRound] = useState(1)
+  const [history, setHistory] = useState([])
   const [theme, setTheme] = usePreferredTheme()
+  
+  const totalScore = history.reduce((sum, entry) => sum + entry.score, 0)
+  const streak = computeStreak(history)
+  const [highScore, setHighScore] = useState(loadHighScore)
+  const [isNewHighScore, setIsNewHighScore] = useState(false)
 
   const startNewRound = useCallback(async (advance = false) => {
     setGame({ event: null, guess: null, result: null, loading: true, error: null })
@@ -79,7 +125,6 @@ function App() {
   }, [startNewRound])
 
   function handleGuess(latlng) {
-    // Only allow placing a guess before the round is scored.
     if (game.result) return
     setGame((g) => ({ ...g, guess: latlng }))
   }
@@ -89,6 +134,29 @@ function App() {
     try {
       const result = await submitGuess(game.event.id, game.guess)
       setGame((g) => ({ ...g, result }))
+      setHistory((h) => [
+        ...h,
+        {
+          round,
+          title: game.event.title,
+          year: result.year,
+          distance_km: result.distance_km,
+          score: result.score,
+        },
+      ])
+
+      if (result.score > highScore) {
+        setHighScore(result.score)
+        setIsNewHighScore(true)
+        try {
+          localStorage.setItem(HIGH_SCORE_KEY, String(result.score))
+        } catch (e) {
+          console.warn("Storage restricted: could not save new high score.")
+        }
+      } else {
+        setIsNewHighScore(false)
+      }
+
     } catch (err) {
       setGame((g) => ({ ...g, error: err.message }))
     }
@@ -124,6 +192,16 @@ function App() {
         <span className="brand">History Guesser</span>
         <div className="top-bar-right">
           <span className="round-badge">Round {round}</span>
+          <span className="high-score-badge">Best: {highScore}</span>
+          {history.length > 0 && (
+            <span className="total-badge">Total {totalScore}</span>
+          )}
+          {streak >= 2 && (
+            <span className="streak-badge">🔥 {streak} streak</span>
+          )}
+          {isNewHighScore && (
+            <div className="new-high-score-banner">New high score!</div>
+          )}
           <button
             className="theme-toggle"
             onClick={toggleTheme}
@@ -136,33 +214,35 @@ function App() {
       </div>
 
       <div className="game-layout" key={game.event.id}>
-        {/* Left column: event info */}
-        <div className="panel event-panel">
-          <div className="event-photo">
-            <img src={game.event.image_url} alt={game.event.title} />
-            <span className="difficulty-chip">{DIFFICULTY_LABEL[game.event.difficulty] || 'Unknown'}</span>
+        <div className="left-column">
+          <div className="panel event-panel">
+            <div className="event-photo">
+              <img src={game.event.image_url} alt={game.event.title} />
+              <span className="difficulty-chip">{DIFFICULTY_LABEL[game.event.difficulty] || 'Unknown'}</span>
+            </div>
+            <div className="event-body">
+              <h2>{game.event.title}</h2>
+              <p>{game.event.description}</p>
+            </div>
+            {!game.result && (
+              <button
+                className={`submit-btn${game.guess ? ' armed' : ''}`}
+                onClick={handleSubmit}
+                disabled={!game.guess}
+              >
+                {game.guess ? 'Submit guess' : 'Click the map to guess'}
+              </button>
+            )}
+            {game.result && (
+              <button className="next-btn" onClick={() => startNewRound(true)}>
+                Next round
+              </button>
+            )}
           </div>
-          <div className="event-body">
-            <h2>{game.event.title}</h2>
-            <p>{game.event.description}</p>
-          </div>
-          {!game.result && (
-            <button
-              className={`submit-btn${game.guess ? ' armed' : ''}`}
-              onClick={handleSubmit}
-              disabled={!game.guess}
-            >
-              {game.guess ? 'Submit guess' : 'Click the map to guess'}
-            </button>
-          )}
-          {game.result && (
-            <button className="next-btn" onClick={() => startNewRound(true)}>
-              Next round
-            </button>
-          )}
+
+          <RoundHistory history={history} />
         </div>
 
-        {/* Right column: map + result */}
         <div className="right-column">
           <div className="panel map-panel">
             <GameMap
