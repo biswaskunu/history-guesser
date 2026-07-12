@@ -70,6 +70,16 @@ function computeStreak(history) {
   return streak
 }
 
+const HIGH_SCORE_KEY = 'historyGuesser.highScore'
+
+function loadHighScore() {
+  const stored = localStorage.getItem(HIGH_SCORE_KEY)
+  const parsed = stored ? parseInt(stored, 10) : 0
+  return Number.isNaN(parsed) ? 0 : parsed
+}
+
+
+
 function App() {
   // Single state object because these fields all change together at each
   // phase transition (new round -> guessing -> result).
@@ -83,9 +93,11 @@ function App() {
   const [round, setRound] = useState(1)
   const [history, setHistory] = useState([])
   const [theme, setTheme] = usePreferredTheme()
-
+  
   const totalScore = history.reduce((sum, entry) => sum + entry.score, 0)
   const streak = computeStreak(history)
+  const [highScore, setHighScore] = useState(loadHighScore)
+  const [isNewHighScore, setIsNewHighScore] = useState(false)
 
   const startNewRound = useCallback(async (advance = false) => {
     setGame({ event: null, guess: null, result: null, loading: true, error: null })
@@ -123,6 +135,15 @@ function App() {
           score: result.score,
         },
       ])
+
+      if (result.score > highScore) {
+        setHighScore(result.score)
+        setIsNewHighScore(true)
+        localStorage.setItem(HIGH_SCORE_KEY, String(result.score))
+      } else {
+        setIsNewHighScore(false)
+      }
+
     } catch (err) {
       setGame((g) => ({ ...g, error: err.message }))
     }
@@ -158,11 +179,15 @@ function App() {
         <span className="brand">History Guesser</span>
         <div className="top-bar-right">
           <span className="round-badge">Round {round}</span>
+          <span className="high-score-badge">Best: {highScore}</span>
           {history.length > 0 && (
             <span className="total-badge">Total {totalScore}</span>
           )}
           {streak >= 2 && (
             <span className="streak-badge">🔥 {streak} streak</span>
+          )}
+          {isNewHighScore && (
+            <div className="new-high-score-banner">New high score!</div>
           )}
           <button
             className="theme-toggle"
