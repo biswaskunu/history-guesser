@@ -23,7 +23,6 @@ function verdictFor(score) {
   return 'Bro really missed , is this your first time playing?'
 }
 
-
 function SunIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -43,14 +42,22 @@ function MoonIcon() {
 
 function usePreferredTheme() {
   const [theme, setTheme] = useState(() => {
-    const stored = localStorage.getItem('theme')
-    if (stored === 'light' || stored === 'dark') return stored
+    try {
+      const stored = localStorage.getItem('theme')
+      if (stored === 'light' || stored === 'dark') return stored
+    } catch (e) {
+      console.warn("Storage restricted: defaulting system theme.")
+    }
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   })
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
-    localStorage.setItem('theme', theme)
+    try {
+      localStorage.setItem('theme', theme)
+    } catch (e) {
+      // Quietly fail if storage is restricted
+    }
   }, [theme])
 
   return [theme, setTheme]
@@ -73,12 +80,15 @@ function computeStreak(history) {
 const HIGH_SCORE_KEY = 'historyGuesser.highScore'
 
 function loadHighScore() {
-  const stored = localStorage.getItem(HIGH_SCORE_KEY)
-  const parsed = stored ? parseInt(stored, 10) : 0
-  return Number.isNaN(parsed) ? 0 : parsed
+  try {
+    const stored = localStorage.getItem(HIGH_SCORE_KEY)
+    const parsed = stored ? parseInt(stored, 10) : 0
+    return Number.isNaN(parsed) ? 0 : parsed
+  } catch (e) {
+    console.warn("Storage restricted: could not load high score.")
+    return 0;
+  }
 }
-
-
 
 function App() {
   // Single state object because these fields all change together at each
@@ -115,7 +125,6 @@ function App() {
   }, [startNewRound])
 
   function handleGuess(latlng) {
-    // Only allow placing a guess before the round is scored.
     if (game.result) return
     setGame((g) => ({ ...g, guess: latlng }))
   }
@@ -139,7 +148,11 @@ function App() {
       if (result.score > highScore) {
         setHighScore(result.score)
         setIsNewHighScore(true)
-        localStorage.setItem(HIGH_SCORE_KEY, String(result.score))
+        try {
+          localStorage.setItem(HIGH_SCORE_KEY, String(result.score))
+        } catch (e) {
+          console.warn("Storage restricted: could not save new high score.")
+        }
       } else {
         setIsNewHighScore(false)
       }
@@ -201,7 +214,6 @@ function App() {
       </div>
 
       <div className="game-layout" key={game.event.id}>
-        {/* Left column: event info + session history */}
         <div className="left-column">
           <div className="panel event-panel">
             <div className="event-photo">
@@ -231,7 +243,6 @@ function App() {
           <RoundHistory history={history} />
         </div>
 
-        {/* Right column: map + result */}
         <div className="right-column">
           <div className="panel map-panel">
             <GameMap
