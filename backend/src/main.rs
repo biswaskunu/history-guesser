@@ -39,7 +39,7 @@ async fn main() -> anyhow::Result<()> {
 
     // CORS configuration
     let frontend_origin = std::env::var("FRONTEND_ORIGIN")
-    .unwrap_or_else(|_| "http://localhost:5173".to_string());
+    .unwrap_or_else(|_| "https://history-guesser.netlify.app/".to_string());
 
     let origins: Vec<HeaderValue> = frontend_origin
         .split(',')
