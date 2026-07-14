@@ -2,7 +2,7 @@
 
 A GeoGuessr-style game for history buffs — you're shown a historical photo and its title/description, then you drop a pin on the map for where (and are scored on how close) it happened.
 
-**Live demo:** https://history-guesser.netlify.app
+**Live demo:** https://history-guesser-game.netlify.app
 
 ## How it works
 
