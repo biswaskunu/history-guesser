@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { fetchRandomEvent, submitGuess } from './Api.js'
 import GameMap from './components/GameMap'
 import RoundHistory from './components/RoundHistory'
@@ -15,6 +15,7 @@ const DIFFICULTY_LABEL = {
 // A round counts toward a streak once its score clears this bar — matches
 // the "Close guess" verdict tier so the streak reflects consistently good guesses.
 const STREAK_THRESHOLD = 3000
+const HIGH_SCORE_KEY = 'historyGuesser.highScore'
 
 function verdictFor(score) {
   if (score >= 4500) return 'Bro, touch some grass!'
@@ -77,7 +78,6 @@ function computeStreak(history) {
   return streak
 }
 
-const HIGH_SCORE_KEY = 'historyGuesser.highScore'
 
 function loadHighScore() {
   try {
@@ -101,6 +101,7 @@ function App() {
     error: null,
   })
   const [round, setRound] = useState(1)
+  // const [seenIds, setSeenIds] = useState([])
   const [history, setHistory] = useState([])
   const [theme, setTheme] = usePreferredTheme()
   
@@ -109,16 +110,19 @@ function App() {
   const [highScore, setHighScore] = useState(loadHighScore)
   const [isNewHighScore, setIsNewHighScore] = useState(false)
 
+  const seenIdsRef = useRef([])
+
   const startNewRound = useCallback(async (advance = false) => {
     setGame({ event: null, guess: null, result: null, loading: true, error: null })
     try {
-      const event = await fetchRandomEvent()
+      const event = await fetchRandomEvent(null, seenIdsRef.current)
+      seenIdsRef.current = [...seenIdsRef.current, event.id]
       setGame({ event, guess: null, result: null, loading: false, error: null })
       if (advance) setRound((r) => r + 1)
     } catch (err) {
       setGame((g) => ({ ...g, loading: false, error: err.message }))
     }
-  }, [])
+  }, []) // stable identity — no seenIds dependency anymore
 
   useEffect(() => {
     startNewRound(false)

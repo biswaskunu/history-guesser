@@ -16,6 +16,8 @@ use uuid::Uuid;
 pub struct RandomEventParams {
     /// Optional difficulty filter, 1 (easiest) to 5 (hardest).
     pub difficulty: Option<i16>,
+    /// Comma-separated list of event IDs to exclude (already-seen this session).
+    pub exclude: Option<String>,
 }
 
 pub async fn random_event(
@@ -31,25 +33,63 @@ pub async fn random_event(
         }
     }
 
+    // Parse the exclusion list, silently dropping anything that isn't a valid UUID
+    // rather than failing the whole request over a malformed id.
+    let exclude_ids: Vec<Uuid> = params
+        .exclude
+        .as_deref()
+        .unwrap_or("")
+        .split(',')
+        .filter_map(|s| s.trim().parse::<Uuid>().ok())
+        .collect();
+
     let result = sqlx::query_as::<_, Event>(
         r#"
         SELECT id, image_url, title, description, latitude, longitude, year, difficulty
         FROM events
-        WHERE $1::smallint IS NULL OR difficulty = $1
+        WHERE ($1::smallint IS NULL OR difficulty = $1)
+          AND NOT (id = ANY($2))
         ORDER BY random()
         LIMIT 1
         "#,
     )
     .bind(params.difficulty)
+    .bind(&exclude_ids)
     .fetch_optional(&state.db)
     .await;
 
     match result {
         Ok(Some(event)) => Ok(Json(PublicEvent::from(event))),
-        Ok(None) => Err((
-            StatusCode::NOT_FOUND,
-            Json(json!({ "error": "no events found" })),
-        )),
+        Ok(None) => {
+            // this session — reset by ignoring the exclusion list rather than dead-ending the game.
+            let fallback = sqlx::query_as::<_, Event>(
+                r#"
+                SELECT id, image_url, title, description, latitude, longitude, year, difficulty
+                FROM events
+                WHERE $1::smallint IS NULL OR difficulty = $1
+                ORDER BY random()
+                LIMIT 1
+                "#,
+            )
+            .bind(params.difficulty)
+            .fetch_optional(&state.db)
+            .await;
+
+            match fallback {
+                Ok(Some(event)) => Ok(Json(PublicEvent::from(event))),
+                Ok(None) => Err((
+                    StatusCode::NOT_FOUND,
+                    Json(json!({ "error": "no events found" })),
+                )),
+                Err(e) => {
+                    tracing::error!("random_event fallback query failed: {e}");
+                    Err((
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(json!({ "error": "database error" })),
+                    ))
+                }
+            }
+        }
         Err(e) => {
             tracing::error!("random_event query failed: {e}");
             Err((
