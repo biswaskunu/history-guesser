@@ -4,9 +4,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
  * Fetch a random event to play as the next round.
  * @param {number|null} difficulty - optional filter, 1 (easiest) to 5 (hardest)
  */
-export async function fetchRandomEvent(difficulty = null) {
+export async function fetchRandomEvent(difficulty = null, excludeIds = []) {
   const url = new URL('/events/random', API_URL)
   if (difficulty) url.searchParams.set('difficulty', difficulty)
+  if (excludeIds.length > 0) url.searchParams.set('exclude', excludeIds.join(','))
 
   const res = await fetch(url)
   if (!res.ok) {

@@ -1,4 +1,3 @@
--- Sample events for local testing with valid, hotlink-friendly CDN links
 INSERT INTO events (image_url, title, description, latitude, longitude, year, difficulty)
 VALUES
     -- 1. Fall of the Berlin Wall
@@ -70,4 +69,94 @@ VALUES
         'Construction of the Taj Mahal Begins',
         'Emperor Shah Jahan commissions a massive white marble mausoleum along the Yamuna River.',
         27.1751, 78.0421, 1632, 3
+    ),
+
+    -- 11. Titanic Sinking
+    (
+        'https://images.unsplash.com/photo-1548567219-9306a0440b6c?q=80&w=1025&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+        'Sinking of the RMS Titanic',
+        'The famous ocean liner sinks after striking an iceberg.',
+        41.7325, -49.9469, 1912, 2
+    ),
+
+    -- 12. D-Day Normandy Landings
+    (
+        'https://images.unsplash.com/photo-1578402383690-a85ec85b97ca?q=80&w=1107&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+        'D-Day Landings',
+        'Allied troops storm the beaches of Normandy.',
+        49.3228, -0.6210, 1944, 3
+    ),
+
+    -- 13. Signing of the Declaration of Independence
+    (
+        'https://images.unsplash.com/photo-1559535251-b8482c93b345?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+        'Declaration of Independence',
+        'Representatives adopt the American Declaration of Independence.',
+        39.9489, -75.1500, 1776, 2
+    ),
+
+    -- 14. Wright Brothers First Flight
+    (
+        'https://images.unsplash.com/photo-1614120625014-0929f1eca50d?q=80&w=1195&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+        'First Powered Flight',
+        'The Wright brothers achieve the first successful powered flight.',
+        36.0158, -75.6675, 1903, 2
+    ),
+
+
+    -- 15. Fall of Constantinople
+    (
+        'https://images.unsplash.com/photo-1527838832700-5059252407fa?auto=format&fit=crop&w=1200&q=80',
+        'Fall of Constantinople',
+        'The Ottoman Empire captures Constantinople, ending the Byzantine Empire.',
+        41.0082, 28.9784, 1453, 4
+    ),
+
+    -- 16. Chernobyl Disaster
+    (
+        'https://images.unsplash.com/photo-1631606853778-36079dcef034?q=80&w=1025&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+        'Chernobyl Nuclear Disaster',
+        'Reactor No. 4 explodes at the Chernobyl Nuclear Power Plant.',
+        51.3890, 30.0994, 1986, 3
+    ),
+
+    -- 17. Mount Vesuvius Eruption
+    (
+        'https://images.unsplash.com/photo-1717446871468-95ace81658d2?q=80&w=1127&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+        'Eruption of Mount Vesuvius',
+        'The Roman cities of Pompeii and Herculaneum are buried in volcanic ash.',
+        40.8214, 14.4265, 79, 3
+    ),
+
+    -- 18. First Olympic Games
+    (
+        'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1200&q=80',
+        'First Modern Olympic Games',
+        'Athens hosts the first modern Olympic Games.',
+        37.9838, 23.7275, 1896, 2
+    ),
+
+    -- 19. Attack on Pearl Harbor
+    (
+        'https://images.unsplash.com/photo-1536597297293-f5adf6145863?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+        'Attack on Pearl Harbor',
+        'Japan launches a surprise attack on the U.S. naval base.',
+        21.3656, -157.9500, 1941, 2
+    ),
+
+
+    -- 20. Battle of Waterloo
+    (
+        'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=1200&q=80',
+        'Battle of Waterloo',
+        'Napoleon Bonaparte suffers his final defeat.',
+        50.6806, 4.4125, 1815, 3
+    ),
+
+    -- 21. Coronation of Queen Elizabeth II
+    (
+        'https://images.unsplash.com/photo-1643113231846-65fbe62ee7ab?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+        'Coronation of Queen Elizabeth II',
+        'Queen Elizabeth II is crowned at Westminster Abbey.',
+        51.4994, -0.1273, 1953, 2
     );
